@@ -5,11 +5,11 @@ from os.path import join
 from subprocess import check_output, CalledProcessError
 from datetime import datetime
 
-ROOT = os.getcwd()
+ROOT = os.environ['UMAKE_ROOT'] if 'UMAKE_ROOT' in os.environ else os.getcwd()
 UMAKE_ROOT_DIR = join(ROOT, ".umake")
 UMKAE_TMP_DIR = join(UMAKE_ROOT_DIR, "tmp")
 UMAKE_BUILD_CACHE_DIR = join(UMAKE_ROOT_DIR, "build-cache")
-UMAKE_BUILD_CACHE_MAX_SIZE_MB = 1500
+UMAKE_BUILD_CACHE_MAX_SIZE_MB = int(os.environ['UMAKE_LOCAL_CACHE_SIZE']) if 'UMAKE_LOCAL_CACHE_SIZE' in os.environ else 1500
 MINIMAL_ENV = {"PATH": "/usr/bin"}
 UMAKE_MAX_WORKERS = 8
 UMAKE_DB = join(UMAKE_ROOT_DIR, "db.pickle")
