@@ -1,7 +1,5 @@
 import certifi
 import urllib3
-import hashlib
-import os
 import pickle
 import io
 from os.path import join
@@ -9,6 +7,7 @@ from minio import Minio, error  # takes 0.1 seconds, check what to do
 from minio.helpers import MAX_POOL_SIZE
 from umake.cache import base_cache
 from umake.cache.base_cache import MetadataCache
+from umake.utils.hashing import get_cache_key
 from umake.config import global_config
 from umake.colored_output import out
 
@@ -70,7 +69,7 @@ class MinioCache(base_cache.Cache):
         cache_src = deps_hash.hex()
         try:
             for target in targets:
-                f = hashlib.sha1(target.encode("ascii")).hexdigest()
+                f = get_cache_key(target.encode("ascii"))
                 src = join(cache_src, f)
                 obj = self.mc.fget_object(bucket_name=global_config.remote_bucket, object_name=src, file_path=target)
                 st_mode = int(obj.metadata["X-Amz-Meta-St_mode"])
@@ -101,7 +100,7 @@ class MinioCache(base_cache.Cache):
             # shutil.rmtree(cache_dst, ignore_errors=True)
             # os.mkdir(cache_dst)
             for target in targets:
-                dst = join(cache_dst, hashlib.sha1(target.encode("ascii")).hexdigest())
+                dst = join(cache_dst, get_cache_key(target.encode("ascii")))
                 file_attr = {"st_mode": self._get_chmod(target)}
                 self.mc.fput_object(bucket_name=global_config.remote_bucket, object_name=dst, file_path=target, metadata=file_attr)
         except (urllib3.exceptions.ReadTimeoutError, urllib3.exceptions.MaxRetryError, urllib3.exceptions.ProtocolError):

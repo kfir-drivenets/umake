@@ -1,3 +1,9 @@
 python-igraph==0.7.1.post6
+# Used for hashing
+blake3
+
+# Used for remote caching
 minio
 redis
+boto
+google-cloud-storage

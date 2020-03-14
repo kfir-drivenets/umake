@@ -1,11 +1,11 @@
 import redis
 import json
 import pickle
-import hashlib
 from os.path import join
 from umake.cache.base_cache import Cache, MetadataCache
 from umake.config import global_config
 from umake.colored_output import out
+from umake.utils.hashing import get_cache_key
 
 
 class RedisCache(Cache):
@@ -44,7 +44,7 @@ class RedisCache(Cache):
         cache_src = deps_hash.hex()
         try:
             for target in targets:
-                f = hashlib.sha1(target.encode("ascii")).hexdigest()
+                f = get_cache_key(target.encode("ascii"))
                 src = join(cache_src, f)
 
                 # Try to get the file data from redis
@@ -77,7 +77,7 @@ class RedisCache(Cache):
         cache_dst = deps_hash.hex()
         try:
             for target in targets:
-                dst = join(cache_dst, hashlib.sha1(target.encode("ascii")).hexdigest())
+                dst = join(cache_dst, get_cache_key(target.encode("ascii")))
                 file_attr = {"st_mode": self._get_chmod(target)}
                 with open(target, 'rb') as target_data:
                     self._redis.hset(dst, 'file_data', target_data.read())

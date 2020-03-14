@@ -612,8 +612,8 @@ int my_func{i}()
         umake += ": > touch f > f"
         self._compile(umake, remote_cache=True)
 
-        self.mc.stat_object(self.BUCKET_NAME, "md-48b67e8fe03dc99f08de9753e3a1dae34eb0b136")
-        self.mc.remove_object(self.BUCKET_NAME, "md-48b67e8fe03dc99f08de9753e3a1dae34eb0b136")
+        self.mc.stat_object(self.BUCKET_NAME, "md-ea4efbf2d60daca9f3fd1584aa0fb76875163061a6a8207facb65eddf29d2772")
+        self.mc.remove_object(self.BUCKET_NAME, "md-ea4efbf2d60daca9f3fd1584aa0fb76875163061a6a8207facb65eddf29d2772")
         self._rm(["f"])
         """ test env"""
         os.environ["UMAKE_CONFIG_REMOTE_CACHE"] = f"minio rw 0.0.0.0:9000 umake umakeumake {self.BUCKET_NAME}"
@@ -621,8 +621,8 @@ int my_func{i}()
 
         self._compile(umake, remote_cache=True)
 
-        self.mc.stat_object(self.BUCKET_NAME, "md-48b67e8fe03dc99f08de9753e3a1dae34eb0b136")
-        self.mc.remove_object(self.BUCKET_NAME, "md-48b67e8fe03dc99f08de9753e3a1dae34eb0b136")
+        self.mc.stat_object(self.BUCKET_NAME, "md-ea4efbf2d60daca9f3fd1584aa0fb76875163061a6a8207facb65eddf29d2772")
+        self.mc.remove_object(self.BUCKET_NAME, "md-ea4efbf2d60daca9f3fd1584aa0fb76875163061a6a8207facb65eddf29d2772")
         self._rm(["f"])
         del os.environ["UMAKE_CONFIG_REMOTE_CACHE"]
 
@@ -632,21 +632,21 @@ int my_func{i}()
         self._compile(umake, remote_cache=True)
 
         with self.assertRaises(minio.error.NoSuchKey) as context:
-            self.mc.stat_object(self.BUCKET_NAME, "md-48b67e8fe03dc99f08de9753e3a1dae34eb0b136")
+            self.mc.stat_object(self.BUCKET_NAME, "md-ea4efbf2d60daca9f3fd1584aa0fb76875163061a6a8207facb65eddf29d2772")
 
         """ no remote cache """
-        self.mc.remove_object(self.BUCKET_NAME, "md-48b67e8fe03dc99f08de9753e3a1dae34eb0b136")
+        self.mc.remove_object(self.BUCKET_NAME, "md-ea4efbf2d60daca9f3fd1584aa0fb76875163061a6a8207facb65eddf29d2772")
         self._rm(["f"])
         umake = ": > touch f > f"
 
         with self.assertRaises(minio.error.NoSuchKey) as context:
-            self.mc.stat_object(self.BUCKET_NAME, "md-48b67e8fe03dc99f08de9753e3a1dae34eb0b136")
+            self.mc.stat_object(self.BUCKET_NAME, "md-ea4efbf2d60daca9f3fd1584aa0fb76875163061a6a8207facb65eddf29d2772")
 
         minio_server.terminate()
 
     def _start_remote_cache_redis(self):
         cmd = "redis-server"
-        server = Popen(cmd, shell=True)
+        server = Popen(cmd, shell=True, stdout=subprocess.DEVNULL)
         time.sleep(1)
         self.redis = redis.Redis(host="0.0.0.0", port="6379", db=0)
         self.redis.flushall()
@@ -658,8 +658,8 @@ int my_func{i}()
         umake += ": > touch f > f"
         self._compile(umake, remote_cache=True)
 
-        assert 0 < len(self.redis.hgetall("48b67e8fe03dc99f08de9753e3a1dae34eb0b136"))
-        self.redis.delete("48b67e8fe03dc99f08de9753e3a1dae34eb0b136")
+        assert 0 < len(self.redis.hgetall("ea4efbf2d60daca9f3fd1584aa0fb76875163061a6a8207facb65eddf29d2772"))
+        self.redis.delete("ea4efbf2d60daca9f3fd1584aa0fb76875163061a6a8207facb65eddf29d2772")
         self._rm(["f"])
         """ test env"""
         os.environ["UMAKE_CONFIG_REMOTE_CACHE"] = f"redis rw 0.0.0.0 6379"
@@ -667,8 +667,8 @@ int my_func{i}()
 
         self._compile(umake, remote_cache=True)
 
-        assert 0 < len(self.redis.hgetall("48b67e8fe03dc99f08de9753e3a1dae34eb0b136"))
-        self.redis.delete("48b67e8fe03dc99f08de9753e3a1dae34eb0b136")
+        assert 0 < len(self.redis.hgetall("ea4efbf2d60daca9f3fd1584aa0fb76875163061a6a8207facb65eddf29d2772"))
+        self.redis.delete("ea4efbf2d60daca9f3fd1584aa0fb76875163061a6a8207facb65eddf29d2772")
         self._rm(["f"])
         del os.environ["UMAKE_CONFIG_REMOTE_CACHE"]
 
@@ -677,14 +677,14 @@ int my_func{i}()
         umake += ": > touch f > f"
         self._compile(umake, remote_cache=True)
 
-        assert 0 == len(self.redis.hgetall("48b67e8fe03dc99f08de9753e3a1dae34eb0b136"))
+        assert 0 == len(self.redis.hgetall("ea4efbf2d60daca9f3fd1584aa0fb76875163061a6a8207facb65eddf29d2772"))
 
         """ no remote cache """
-        self.redis.delete("48b67e8fe03dc99f08de9753e3a1dae34eb0b136")
+        self.redis.delete("ea4efbf2d60daca9f3fd1584aa0fb76875163061a6a8207facb65eddf29d2772")
         self._rm(["f"])
         umake = ": > touch f > f"
 
-        assert 0 == len(self.redis.hgetall("48b67e8fe03dc99f08de9753e3a1dae34eb0b136"))
+        assert 0 == len(self.redis.hgetall("ea4efbf2d60daca9f3fd1584aa0fb76875163061a6a8207facb65eddf29d2772"))
 
         redis_server.terminate()
 
@@ -692,12 +692,12 @@ int my_func{i}()
         umake = f"[local_cache_size:100]\n"
         umake += ": > touch f > f"
         self._compile(umake, local_cache=True)
-        assert os.path.exists("env/.umake/build-cache/md-48b67e8fe03dc99f08de9753e3a1dae34eb0b136") == True
+        assert os.path.exists("env/.umake/build-cache/md-ea4efbf2d60daca9f3fd1584aa0fb76875163061a6a8207facb65eddf29d2772") == True
 
         umake = f"[local_cache_size:0]\n"
         umake += ": > touch f > f"
         self._compile(umake, local_cache=True)
-        assert os.path.exists("env/.umake/build-cache/md-48b67e8fe03dc99f08de9753e3a1dae34eb0b136") == False
+        assert os.path.exists("env/.umake/build-cache/md-ea4efbf2d60daca9f3fd1584aa0fb76875163061a6a8207facb65eddf29d2772") == False
 
 
 if __name__ == '__main__':
