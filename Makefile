@@ -2,7 +2,7 @@
 
 .PHONY: test enter benchmark
 
-IMAGE=grisha85/umake:2
+IMAGE=grisha85/umake:3
 
 build-docker:
 	docker build -t ${IMAGE} .

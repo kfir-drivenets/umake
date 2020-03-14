@@ -1,5 +1,4 @@
 import shutil
-import hashlib
 import pickle
 import os
 from os.path import join
@@ -9,6 +8,7 @@ from umake.config import UMAKE_BUILD_CACHE_DIR, UMAKE_BUILD_CACHE_MAX_SIZE_MB
 from umake.colored_output import out
 from umake.utils.fs import fs_lock, fs_unlock, get_size_KB
 from umake.utils.timer import Timer
+from umake.utils.hashing import get_cache_key
 
 
 class FsCache:
@@ -33,7 +33,7 @@ class FsCache:
         cache_src = join(UMAKE_BUILD_CACHE_DIR, deps_hash.hex())
         try:
             for target in targets:
-                f = hashlib.sha1(target.encode("ascii")).hexdigest()
+                f = get_cache_key(target.encode("ascii"))
                 src = join(cache_src, f)
                 shutil.copyfile(src, target)
                 shutil.copymode(src, target)
@@ -52,7 +52,7 @@ class FsCache:
             shutil.rmtree(cache_dst, ignore_errors=True)
             os.mkdir(cache_dst)
             for target in targets:
-                dst = join(cache_dst, hashlib.sha1(target.encode("ascii")).hexdigest())
+                dst = join(cache_dst, get_cache_key(target.encode("ascii")))
                 tmp_dst = f"{dst}.tmp"
                 # do "atomic" copy, in case the copy is interferred
                 shutil.copyfile(target, tmp_dst)

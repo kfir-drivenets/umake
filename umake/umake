@@ -20,7 +20,6 @@ with Timer("done imports"):
     import os
     import uuid
     import shutil
-    import hashlib
     from enum import Enum, IntEnum, auto
     import pickle
     import igraph
@@ -44,6 +43,7 @@ with Timer("done imports"):
     from umake.config import UMAKE_DB, UMAKE_MAX_WORKERS, ROOT, UMAKE_ROOT_DIR, UMKAE_TMP_DIR, UMAKE_BUILD_CACHE_DIR
     from umake.config import global_config
     from umake.cache.base_cache import MetadataCache
+    from umake.utils.hashing import get_hash
 
 
 def byte_xor(ba1, ba2):
@@ -223,13 +223,13 @@ class FileEntry:
         self.dependencies_built += inc
 
     def update_cmd(self):
-        self.md5sum = hashlib.sha1(self.full_path.encode("ascii")).digest()
+        self.md5sum = get_hash(self.full_path.encode("ascii"))
 
     @staticmethod
     def file_md5sum(full_path):
         with open(full_path, "rb") as file_to_check:
             data = file_to_check.read()
-            md5_returned = hashlib.sha1(data).digest()
+            md5_returned = get_hash(data)
             return md5_returned
 
     def update(self):
