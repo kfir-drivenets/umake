@@ -5,7 +5,6 @@ import os
 import pickle
 import io
 from os.path import join
-from stat import S_IMODE
 from minio import Minio, error  # takes 0.1 seconds, check what to do
 from minio.helpers import MAX_POOL_SIZE
 from umake.cache import base_cache
@@ -17,7 +16,8 @@ from umake.colored_output import out
 class MinioCache(base_cache.Cache):
 
     def __init__(self):
-        self.n_timeouts = 0
+        super().__init__()
+
         ca_certs = certifi.where()
         http = urllib3.PoolManager(
                 timeout=1,
@@ -36,12 +36,6 @@ class MinioCache(base_cache.Cache):
                         secret_key=global_config.remote_secret_key,
                         secure=False,
                         http_client=http)
-
-    def _increase_timeout_and_check(self):
-        self.n_timeouts += 1
-        if self.n_timeouts >= 3:
-            out.print_fail(f"remote cache timedout {self.n_timeouts} time, disabling remote cahce")
-            global_config.remote_cache_enable = False
 
     def open_cache(self, cache_hash)->MetadataCache:
         cache_src = "md-" + cache_hash.hex()
@@ -69,16 +63,6 @@ class MinioCache(base_cache.Cache):
         except error.RequestTimeTooSkewed:
             out.print_fail("Time on your host not configured currectlly, remote-cache is disabled")
             global_config.remote_cache_enable = False
-
-    def _get_chmod(self, src):
-        if hasattr(os, 'chmod'):
-            st = os.stat(src)
-            return st.st_mode
-        else:
-            return None
-
-    def _set_chmod(self, dst, st_mode):
-        os.chmod(dst, S_IMODE(st_mode))
 
     def _get_cache(self, deps_hash, targets):
         if deps_hash is None:

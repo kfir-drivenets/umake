@@ -25,11 +25,14 @@ class Config:
 
         self.local_cache = True
         self.local_cache_size = 1500
-        
+
         self.remote_cache_config = True  # how user configured
+
         # the next is result of `remote_cache_config` and if configured
         self.remote_cache_enable = False
+        self.remote_cache_type = None
         self.remote_hostname = None
+        self.remote_port = None
         self.remote_access_key = None
         self.remote_secret_key = None
         self.remote_bucket = None

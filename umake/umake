@@ -642,7 +642,7 @@ class UMakeFileParser():
         except KeyError:
             pass
         return config_value
-    
+
     def _check_variants_usage(self):
         not_exists_varaints = global_config.variant.difference(self.parsed_variants)
         if not_exists_varaints:
@@ -652,20 +652,30 @@ class UMakeFileParser():
         config_value = self._get_config("remote_cache")
         if config_value:
             if global_config.remote_cache_config:
-                remote_type, hostname, access_key, secret_pass, bucket_name, permissions = config_value.split()
+                # Configuration line structure: <remote_type> <permissions> <param1> <param2>....
+                remote_type, permissions, remote_params = config_value.split(' ', 2)
+                global_config.remote_cache_type = remote_type
+
                 if permissions not in ['rw', 'ro']:
                     raise CmdFailedErr(f"not supported permission '{permissions}', supported are ['rw', 'ro']")
                 if permissions == "rw":
                     global_config.remote_write_enable = True
+
                 if remote_type == "minio":
+                    hostname, access_key, secret_pass, bucket_name = remote_params.split()
                     global_config.remote_hostname = hostname
                     global_config.remote_access_key = access_key
                     global_config.remote_secret_key = secret_pass
                     global_config.remote_bucket = bucket_name
                     global_config.remote_cache_enable = True
+                elif remote_type == "redis":
+                    hostname, port = remote_params.split()
+                    global_config.remote_hostname = hostname
+                    global_config.remote_port = port
+                    global_config.remote_cache_enable = True
                 else:
                     raise CmdFailedErr(f"not supported remote cahce '{remote_type}''")
-        
+
         config_value = self._get_config("local_cache_size")
         if config_value:
             global_config.local_cache_size = int(config_value)
@@ -1408,8 +1418,8 @@ class UMake:
         parser.add_argument('--remote-cache-delete', action='store_true', dest="remote_cache_delete",
                             help="WARNING: delete all remote cache objects")
 
-        parser.add_argument('-v', '--variant', 
-                            action='append', 
+        parser.add_argument('-v', '--variant',
+                            action='append',
                             type=str,
                             dest="variant",
                             default=[],
@@ -1417,7 +1427,7 @@ class UMake:
 
         parser.add_argument('--clean', action='store_true', dest="clean",
                             help="clean umake file, with all targets")
-        
+
         parser.add_argument('--verbose', action='store_true', dest="verbose",
                             help="show verbose compilation")
 
@@ -1466,7 +1476,7 @@ class UMake:
             self.load_graph()
             self.clean()
             return
-        
+
         if args.details:
             args.targets = [join(ROOT, t) + "**" for t in args.targets]
             self.show_target_details_run(args.targets)
@@ -1481,8 +1491,6 @@ class UMake:
         else:
             self.parse_args()
         out.destroy()
-
-
 
 umake = UMake()
 umake.start()

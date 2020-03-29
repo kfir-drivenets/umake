@@ -2,8 +2,10 @@ test/env/*
 __pycache__
 test/coverage/*
 test/.coverage
+test/dump.rdb
 example/hello.o
 example/.umake
 example/hello_world
 example/.coverage
+example/dump.rdb
 umake.egg-info

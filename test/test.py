@@ -7,6 +7,7 @@ import json
 import time
 from minio import Minio
 import minio
+import redis
 
 ROOT = os.getcwd()
 COVERAGE_DIR_PATH = os.path.join(ROOT, 'coverage')
@@ -24,7 +25,7 @@ class Timer:
 
     def __exit__(self, *args):
         self.end = time.time()
-        interavl = self.end - self.start 
+        interavl = self.end - self.start
         print(f"[{interavl:.3f}] [{interavl/self.iterations:.5f} per iter] {self.msg}")
 
 class TestUMake(unittest.TestCase):
@@ -117,7 +118,7 @@ class TestUMake(unittest.TestCase):
 
         if targets:
             targets_str = " ".join(targets)
-       
+
         try:
             def call():
                 return check_output(f"{COVEARAGE_CMD} {UMAKE_BIN} {remote_cache_conf} {local_cache_conf} {variant_config} {targets_str}", cwd="env/", shell=True).decode("utf-8")
@@ -577,10 +578,10 @@ int my_func{i}()
 }}
 """)
             umake += f": {i}.c > gcc -g -O2 -Wall -fPIC -c {{filename}} -o {{target}} > {i}.o\n"
-        
+
         with Timer("build", n_files):
             self._compile(umake, should_output=False, local_cache=True)
-        
+
         with Timer("build - null", n_files):
             self._compile(umake, should_output=False, local_cache=True)
         os.remove("env/.umake/db.pickle")
@@ -601,13 +602,13 @@ int my_func{i}()
             self.mc.remove_bucket(self.BUCKET_NAME)
         except minio.error.NoSuchBucket:
             pass
-            
+
         self.mc.make_bucket(self.BUCKET_NAME)
         return server
 
     def test_remote_cache(self):
         minio_server = self._start_remote_cache_minio()
-        umake = f"[remote_cache:minio 0.0.0.0:9000 umake umakeumake {self.BUCKET_NAME} rw]\n"
+        umake = f"[remote_cache:minio rw 0.0.0.0:9000 umake umakeumake {self.BUCKET_NAME}]\n"
         umake += ": > touch f > f"
         self._compile(umake, remote_cache=True)
 
@@ -615,9 +616,9 @@ int my_func{i}()
         self.mc.remove_object(self.BUCKET_NAME, "md-48b67e8fe03dc99f08de9753e3a1dae34eb0b136")
         self._rm(["f"])
         """ test env"""
-        os.environ["UMAKE_CONFIG_REMOTE_CACHE"] = f"minio 0.0.0.0:9000 umake umakeumake {self.BUCKET_NAME} rw"
+        os.environ["UMAKE_CONFIG_REMOTE_CACHE"] = f"minio rw 0.0.0.0:9000 umake umakeumake {self.BUCKET_NAME}"
         umake = ": > touch f > f"
-        
+
         self._compile(umake, remote_cache=True)
 
         self.mc.stat_object(self.BUCKET_NAME, "md-48b67e8fe03dc99f08de9753e3a1dae34eb0b136")
@@ -626,7 +627,7 @@ int my_func{i}()
         del os.environ["UMAKE_CONFIG_REMOTE_CACHE"]
 
         """ read only """
-        umake = f"[remote_cache:minio 0.0.0.0:9000 umake umakeumake {self.BUCKET_NAME} ro]\n"
+        umake = f"[remote_cache:minio ro 0.0.0.0:9000 umake umakeumake {self.BUCKET_NAME}]\n"
         umake += ": > touch f > f"
         self._compile(umake, remote_cache=True)
 
@@ -642,6 +643,50 @@ int my_func{i}()
             self.mc.stat_object(self.BUCKET_NAME, "md-48b67e8fe03dc99f08de9753e3a1dae34eb0b136")
 
         minio_server.terminate()
+
+    def _start_remote_cache_redis(self):
+        cmd = "redis-server"
+        server = Popen(cmd, shell=True)
+        time.sleep(1)
+        self.redis = redis.Redis(host="0.0.0.0", port="6379", db=0)
+        self.redis.flushall()
+        return server
+
+    def test_redis_remote_cache(self):
+        redis_server = self._start_remote_cache_redis()
+        umake = f"[remote_cache:redis rw 0.0.0.0 6379]\n"
+        umake += ": > touch f > f"
+        self._compile(umake, remote_cache=True)
+
+        assert 0 < len(self.redis.hgetall("48b67e8fe03dc99f08de9753e3a1dae34eb0b136"))
+        self.redis.delete("48b67e8fe03dc99f08de9753e3a1dae34eb0b136")
+        self._rm(["f"])
+        """ test env"""
+        os.environ["UMAKE_CONFIG_REMOTE_CACHE"] = f"redis rw 0.0.0.0 6379"
+        umake = ": > touch f > f"
+
+        self._compile(umake, remote_cache=True)
+
+        assert 0 < len(self.redis.hgetall("48b67e8fe03dc99f08de9753e3a1dae34eb0b136"))
+        self.redis.delete("48b67e8fe03dc99f08de9753e3a1dae34eb0b136")
+        self._rm(["f"])
+        del os.environ["UMAKE_CONFIG_REMOTE_CACHE"]
+
+        """ read only """
+        umake = f"[remote_cache:redis ro 0.0.0.0 6379]\n"
+        umake += ": > touch f > f"
+        self._compile(umake, remote_cache=True)
+
+        assert 0 == len(self.redis.hgetall("48b67e8fe03dc99f08de9753e3a1dae34eb0b136"))
+
+        """ no remote cache """
+        self.redis.delete("48b67e8fe03dc99f08de9753e3a1dae34eb0b136")
+        self._rm(["f"])
+        umake = ": > touch f > f"
+
+        assert 0 == len(self.redis.hgetall("48b67e8fe03dc99f08de9753e3a1dae34eb0b136"))
+
+        redis_server.terminate()
 
     def test_local_cache(self):
         umake = f"[local_cache_size:100]\n"
